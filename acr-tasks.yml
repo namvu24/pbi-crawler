@@ -1,0 +1,10 @@
+version: v1.0.0
+steps:
+# Build target image
+- build: -t {{.Run.Registry}}/pbicrawler:{{.Run.ID}} -f Dockerfile .
+- build: -t {{.Run.Registry}}/pbicrawler:latest -f Dockerfile .
+# Push image
+- push:
+  - {{.Run.Registry}}/pbicrawler:{{.Run.ID}}
+- push:
+  - {{.Run.Registry}}/pbicrawler:latest
