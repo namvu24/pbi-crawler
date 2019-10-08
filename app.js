@@ -4,22 +4,11 @@ const path = require('path');
 const axios = require('axios');
 const moment = require('moment');
 const _ = require('lodash');
-const { uploadToBlobStorage, downloadFromBlobStorage } = require('./utils.js');
 
-// Convert dashboards json to CSV format with header and delimiter
-const convertToCSV = (dataObject) => {
-    const header = ['Dashboard','Name', 'Email', 'Permissions'];
-    let csvContent = header.join(';') + '\r\n';
-
-    dataObject.forEach(item => {
-        item.permissionRows.forEach(row => {
-            csvContent += item.name + ";" + row.join(';') + '\r\n';
-        });
-    });
-    return csvContent;
-}
+const { convertToCSV, uploadToBlobStorage, downloadFromBlobStorage } = require('./utils.js');
 
 const checkDashboardPermissions = async (currentJsonFile, newJsonFile) => {
+    console.log("Checking dashboard for changes...");
     const currentJsonFileContent = fs.readFileSync(currentJsonFile, "utf-8");
     const currentDashboards = JSON.parse(currentJsonFileContent);
     const newJsonFileContent = fs.readFileSync(newJsonFile, "utf-8");
@@ -90,7 +79,7 @@ const openDashboardPage = async (browser, url, name, isFirstTime) => {
     }
 
     await page.waitFor('.permissionTable');
-    console.log(`permissionTable showing..`);
+    console.log(`permissionTable of ${name} showing..`);
     await page.screenshot({path: './data/permission.jpg'});
     // Wait for full permissions
     await page.waitFor(3000);
@@ -184,7 +173,8 @@ const main = async () => {
         await uploadToBlobStorage(containerName, csvFileName, csvFilePath, process.env.STORAGE_ACC_CONNSTR);
 
         // Compare to find new dashboards
-        await checkDashboardPermissions(currentJsonFilePath, jsonFilePath, dashboardList);
+        if(fs.existsSync(currentJsonFilePath))
+            await checkDashboardPermissions(currentJsonFilePath, jsonFilePath, dashboardList);
 
         // Clean up generated/downloaded files
         fs.unlinkSync(csvFilePath);

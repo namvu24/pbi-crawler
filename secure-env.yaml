@@ -1,0 +1,31 @@
+apiVersion: 2018-10-01
+location: northeurope
+name: cap-pbi-crawler
+properties:
+  containers:
+  - name: pbicrawlercontainer
+    properties:
+      environmentVariables:
+        - name: 'PRODUCTION'
+          value: 'FALSE'
+        - name: 'TEAMS_CHANNEL_WEBHOOK'
+          value: 'https://outlook.office.com/webhook/401e90cc-e20c-42f7-ba74-a41fa99a0f5c@72f988bf-86f1-41af-91ab-2d7cd011db47/IncomingWebhook/3134d8e64802486db37d3636dba5417b/c5a72640-bd4b-4f0e-b8bd-d899b47bc0e6'
+        - name: 'STORAGE_ACC_CONNSTR'
+          secureValue: 'SECRETVALUE'
+        - name: 'SERVICE_ACCOUNT_USERNAME'
+          secureValue: 'SECRETVALUE'
+        - name: 'SERVICE_ACCOUNT_PASSWORD'
+          secureValue: 'SECRETVALUE'
+      image: 'acrtestne.azurecr.io/pbicrawler:latest'
+      resources:
+        requests:
+          cpu: 1.0
+          memoryInGB: 1.5
+  osType: Linux
+  restartPolicy: OnFailure
+  imageRegistryCredentials:
+    - server: 'acrtestne.azurecr.io'
+      username: 'acrtestne'
+      password: 'SECRETVALUE'
+tags: null
+type: Microsoft.ContainerInstance/containerGroups
