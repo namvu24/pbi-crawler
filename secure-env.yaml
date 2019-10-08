@@ -17,6 +17,9 @@ properties:
         - name: 'SERVICE_ACCOUNT_PASSWORD'
           secureValue: 'SECRETVALUE'
       image: 'acrtestne.azurecr.io/pbicrawler:latest'
+      volumeMounts:
+      - mountPath: /var/app/data/
+        name: filesharevolume
       resources:
         requests:
           cpu: 1.0
@@ -24,8 +27,14 @@ properties:
   osType: Linux
   restartPolicy: OnFailure
   imageRegistryCredentials:
-    - server: 'acrtestne.azurecr.io'
-      username: 'acrtestne'
-      password: 'SECRETVALUE'
+  - server: 'acrtestne.azurecr.io'
+    username: 'acrtestne'
+    password: 'SECRETVALUE'
+  volumes:
+  - name: filesharevolume
+    azureFile:
+      sharename: data
+      storageAccountName: 'cappowerbimonitorstor'
+      storageAccountKey: 'SECRETVALUE'
 tags: null
 type: Microsoft.ContainerInstance/containerGroups

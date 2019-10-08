@@ -73,6 +73,16 @@ const openDashboardPage = async (browser, url, name, isFirstTime) => {
             await page.waitFor(5000);
             console.log("Logged in...");
             await page.screenshot({path: './data/logged.jpg'});
+            const yesBtn = await page.$$('#idSIButton9');
+            const noBtn = await page.$$('#idBtn_Back');
+            console.log(yesBtn.length);
+            console.log(noBtn.length);
+            if(yesBtn.length > 0 && noBtn.length > 0) {
+                console.log("Stay in page showing...");
+                await page.click('#idSIButton9');
+                await page.waitFor(5000);
+                await page.screenshot({path: './data/logged2.jpg'});
+            }
         } catch(err) {
             console.log(err);
         }
