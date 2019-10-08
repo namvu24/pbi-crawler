@@ -132,8 +132,6 @@ const main = async () => {
 
         // Download dashboard list from blob storgage
         const downloadFolder = 'data';
-        const dashboardFile = 'dashboard-list.txt';
-        const dashboardFilePath = path.resolve(downloadFolder, dashboardFile);
         const currentJsonFile = "pbi-dashboard-permissions.json";
         const containerName = 'pbi-dashboard';
         const currentJsonFilePath = path.resolve(downloadFolder, "pbi-dashboard-permissions-current.json");
@@ -188,7 +186,6 @@ const main = async () => {
         // Clean up generated/downloaded files
         fs.unlinkSync(csvFilePath);
         fs.unlinkSync(jsonFilePath);
-        fs.unlinkSync(dashboardFilePath);
         fs.unlinkSync(currentJsonFilePath);
     }
     catch (error) {
