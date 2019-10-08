@@ -163,14 +163,10 @@ const main = async () => {
 
         // Download dashboard list from blob storgage
         const downloadFolder = 'data';
-        const dashboardFile = 'dashboards.txt';
-        const dashboardFilePath = path.resolve(downloadFolder, dashboardFile);
         const currentJsonFile = "pbi-dashboard-permissions.json";
         const containerName = 'pbi-dashboard';
         const currentJsonFilePath = path.resolve(downloadFolder, "pbi-dashboard-permissions-current.json");
-        if(env === "prod") {
-            await downloadFromBlobStorage(containerName, currentJsonFile, currentJsonFilePath, process.env.STORAGE_ACC_CONNSTR);
-        }
+        await downloadFromBlobStorage(containerName, currentJsonFile, currentJsonFilePath, process.env.STORAGE_ACC_CONNSTR);
 
         const dashboardSettingsURL = "https://msit.powerbi.com/groups/72c32b07-0f58-440b-99b2-06babaf96a00/settings/dashboards";
         const dashboardList = await getDashboardListFromNav(browser, dashboardSettingsURL);
@@ -210,8 +206,6 @@ const main = async () => {
         fs.unlinkSync(csvFilePath);
         fs.unlinkSync(jsonFilePath);
         fs.unlinkSync(currentJsonFilePath);
-        if(env === "prod")
-            fs.unlinkSync(dashboardFilePath);
     }
     catch (error) {
         console.log(error);
