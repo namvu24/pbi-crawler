@@ -50,46 +50,45 @@ const checkDashboardPermissions = async (currentJsonFile, newJsonFile) => {
     }  
 }
 
-const openDashboardPage = async (browser, url, name, isFirstTime) => {
+const openDashboardPage = async (browser, url, name) => {
     const page = await browser.newPage();
     await page.goto(url); 
 
-    // Login for loading the first page
-    if(isFirstTime) {
-        try {
-            await page.waitFor('#i0116');
-            await page.type('#i0116', process.env.SERVICE_ACCOUNT_USERNAME);
-            await page.waitFor(1000);
+    // Login for loading the first pa
+    await page.waitFor(5000);
+    const loginPanelInput = await page.$$('#idSIButton9');
+    if(loginPanelInput.length > 0) {
+        console.log("Login panel showing...");
+        await page.waitFor('#i0116');
+        await page.type('#i0116', process.env.SERVICE_ACCOUNT_USERNAME);
+        await page.waitFor(1000);
+        await page.click('#idSIButton9');
+        
+        console.log("Logging in...");
+        await page.waitFor("#signinsmartcard");
+        await page.click(".normalText");
+        await page.waitFor('#userNameInput');
+        await page.screenshot({path: './data/logging.jpg'});
+        await page.type('#passwordInput', process.env.SERVICE_ACCOUNT_PASSWORD);
+        await page.waitFor(500);
+        await page.click("#submitButton");
+        await page.waitFor(5000);
+        console.log("Logged in");
+        await page.screenshot({path: './data/logged.jpg'});
+        const yesBtn = await page.$$('#idSIButton9');
+        const noBtn = await page.$$('#idBtn_Back');
+        if(yesBtn.length > 0 && noBtn.length > 0) {
+            console.log("Stay in page showing...");
             await page.click('#idSIButton9');
-            
-            console.log("Logging in...");
-            await page.waitFor("#signinsmartcard");
-            await page.click(".normalText");
-            await page.waitFor('#userNameInput');
-            await page.screenshot({path: './data/logging.jpg'});
-            await page.type('#passwordInput', process.env.SERVICE_ACCOUNT_PASSWORD);
-            await page.waitFor(500);
-            await page.click("#submitButton");
             await page.waitFor(5000);
-            console.log("Logged in...");
-            await page.screenshot({path: './data/logged.jpg'});
-            const yesBtn = await page.$$('#idSIButton9');
-            const noBtn = await page.$$('#idBtn_Back');
-            console.log(yesBtn.length);
-            console.log(noBtn.length);
-            if(yesBtn.length > 0 && noBtn.length > 0) {
-                console.log("Stay in page showing...");
-                await page.click('#idSIButton9');
-                await page.waitFor(5000);
-                await page.screenshot({path: './data/logged2.jpg'});
-            }
-        } catch(err) {
-            console.log(err);
+            await page.screenshot({path: './data/logged2.jpg'});
         }
     }
 
+    await page.waitFor(2000);
+    console.log(`checking permissionTable of ${name}..`);
+    await page.screenshot({path: './data/check_permission.jpg'});
     await page.waitFor('.permissionTable');
-    console.log(`permissionTable of ${name} showing..`);
     await page.screenshot({path: './data/permission.jpg'});
     // Wait for full permissions
     await page.waitFor(3000);
@@ -158,7 +157,7 @@ const main = async () => {
             if(!name || !url)
                 continue;
 
-            const dashboardInfo = await openDashboardPage(browser, url, name, isFirstTime = i === 0 ? true : false, console);
+            const dashboardInfo = await openDashboardPage(browser, url, name);
             if(dashboardInfo && dashboardInfo.permissionRows && dashboardInfo.permissionRows.length > 0 )
                 dashboardInfos.push(dashboardInfo);
         }
