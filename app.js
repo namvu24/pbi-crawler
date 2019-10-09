@@ -7,7 +7,7 @@ const _ = require('lodash');
 
 const { convertToCSV, uploadToBlobStorage, downloadFromBlobStorage } = require('./utils.js');
 
-const checkDashboardPermissions = async (currentJsonFile, newJsonFile) => {
+const checkDashboardChanges = async (currentJsonFile, newJsonFile) => {
     console.log("Checking dashboard for changes...");
     const currentJsonFileContent = fs.readFileSync(currentJsonFile, "utf-8");
     const currentDashboards = JSON.parse(currentJsonFileContent);
@@ -19,42 +19,61 @@ const checkDashboardPermissions = async (currentJsonFile, newJsonFile) => {
     const newlyCreatedDashboards = _(newDashboardNames).map(i => (currentDashboardNames).includes(i) ? "" : i).value().filter(i => i != "");
     if(newlyCreatedDashboards.length > 0) {
         const text = `New dashboard **${newlyCreatedDashboards.join(', ')}**.`;
-        let NotificationPayload = new Object;
-        NotificationPayload.text = text; 
-        NotificationPayload.mrkdwn = true; 
+        let NotificationPayload = {
+            text,
+            mrkdwn = true
+        };
         console.log("sending notification about new dashboards");
         console.log(JSON.stringify(NotificationPayload));
-        await axios.post(process.env.TEAMS_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
+        await axios.post(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
     }  
     
     let dashboardPermissionChanges = [];
+    let dashboardReportChanges = [];
     for(let i = 0; i < currentDashboardNames.length; ++i) {
         const dashboardName = currentDashboardNames[i];
         const currentDashboardInfo = currentDashboards.find(x => x.name === dashboardName);
         const newDashboardInfo = newDashboards.find(x => x.name === dashboardName);
-        if(!_.isEqual(currentDashboardInfo, newDashboardInfo)) {
+        if(!_.isEqual(currentDashboardInfo.permissionRows, newDashboardInfo.permissionRows)) {
             dashboardPermissionChanges.push(dashboardName);
-            console.log(`Found changes in dashboard ${dashboardName}`);
+            console.log(`Found permission changes in dashboard ${dashboardName}`);
+        }
+        if(!_.isEqual(currentDashboardInfo.relatedReports, newDashboardInfo.relatedReports)) {
+            dashboardReportChanges.push(dashboardName);
+            console.log(`Found report changes in dashboard ${dashboardName}`);
         }
     }
 
     if(dashboardPermissionChanges.length > 0) {
-        const text = `Dashboard **${dashboardPermissionChanges.join(', ')}** 'permissions changed!`;
-        let NotificationPayload = new Object;
-        NotificationPayload.text = text; 
-        NotificationPayload.mrkdwn = true; 
+        const text = `Dashboard **${dashboardPermissionChanges.join(', ')}** permissions changed!`;
+        let NotificationPayload = {
+            text,
+            mrkdwn = true
+        };
         console.log("sending notification about permissions changed");
         console.log(JSON.stringify(NotificationPayload));
-        await axios.post(process.env.TEAMS_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
-    }  
+        await axios.post(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
+    }
+
+    if(dashboardReportChanges.length > 0) {
+        const text = `Dashboard **${dashboardReportChanges.join(', ')}** related reports changed!`;
+        let NotificationPayload = {
+            text,
+            mrkdwn = true
+        };
+        console.log("sending notification about reports changed");
+        console.log(JSON.stringify(NotificationPayload));
+        await axios.post(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
+    }
 }
 
-const getDashboardListFromNav = async (browser, url) => {
+const getDashboardListFromSettings = async (browser, url) => {
     const page = await browser.newPage();
     await page.goto(url);
     await page.waitFor(5000);
     const loginPanelInput = await page.$$('#idSIButton9');
 
+    // Login if login dialog opens
     try {
         if(loginPanelInput.length > 0) {
             console.log("Login panel showing...");
@@ -87,6 +106,7 @@ const getDashboardListFromNav = async (browser, url) => {
         console.log(err);
     }
 
+    // Get all dashboards infos from settings tab
     await page.waitFor(".settingsTab");
     await page.screenshot({path: './data/dashboardsettings.jpg'});
     await page.$$(".settingsTab");
@@ -97,10 +117,12 @@ const getDashboardListFromNav = async (browser, url) => {
         const settDashboards = document.getElementsByClassName('settingsTab');
         const baseURL = "https://msit.powerbi.com/groups/72c32b07-0f58-440b-99b2-06babaf96a00/permission/dashboard/1/";
         for(let i = 0; i < settDashboards.length; ++i) {
+            // By clicking to each dashboard, we can get its ID from its url
             settDashboards[i].getElementsByTagName("button")[0].click();
             await new Promise(function(resolve) { 
                 setTimeout(resolve, 1000);
             });
+            // We only care about its ID https://msit.powerbi.com/groups/xxx/ID
             const url = baseURL + window.location.href.split('/').pop();
             const dashboard = {
                 name: settDashboards[i].innerText,
@@ -159,18 +181,19 @@ const main = async () => {
             headless: true,
             args: ['--no-sandbox']
         });
-        const env = process.env.PRODUCTION === true ? "prod" : "dev";
 
-        // Download dashboard list from blob storgage
+        
         const downloadFolder = 'data';
         const currentJsonFile = "pbi-dashboard-permissions.json";
         const containerName = 'pbi-dashboard';
         const currentJsonFilePath = path.resolve(downloadFolder, "pbi-dashboard-permissions-current.json");
+        // Download existing json file in order to compare it with a new one later
         await downloadFromBlobStorage(containerName, currentJsonFile, currentJsonFilePath, process.env.STORAGE_ACC_CONNSTR);
 
         const dashboardSettingsURL = "https://msit.powerbi.com/groups/72c32b07-0f58-440b-99b2-06babaf96a00/settings/dashboards";
-        const dashboardList = await getDashboardListFromNav(browser, dashboardSettingsURL);
+        const dashboardList = await getDashboardListFromSettings(browser, dashboardSettingsURL);
         let dashboardInfos = [];
+        
         // Loop through all dashboards to get permissions
         for(let i = 0; i < dashboardList.length; i++) {
             console.log(dashboardList[i]);
@@ -200,7 +223,7 @@ const main = async () => {
 
         // Compare to find new dashboards
         if(fs.existsSync(currentJsonFilePath))
-            await checkDashboardPermissions(currentJsonFilePath, jsonFilePath, dashboardList);
+            await checkDashboardChanges(currentJsonFilePath, jsonFilePath, dashboardList);
 
         // Clean up generated/downloaded files
         fs.unlinkSync(csvFilePath);
@@ -209,6 +232,12 @@ const main = async () => {
     }
     catch (error) {
         console.log(error);
+        const text = `Error when checking pbi dashboards: ${error}`;
+        let NotificationPayload = {
+            text,
+            mrkdwn = true
+        };
+        await axios.post(process.env.TEAMS_INFRA_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
     } 
     finally {
         if(browser)
