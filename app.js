@@ -21,7 +21,7 @@ const checkDashboardChanges = async (currentJsonFile, newJsonFile) => {
         const text = `New dashboard **${newlyCreatedDashboards.join(', ')}**.`;
         let NotificationPayload = {
             text,
-            mrkdwn = true
+            mrkdwn: true
         };
         console.log("sending notification about new dashboards");
         console.log(JSON.stringify(NotificationPayload));
@@ -48,7 +48,7 @@ const checkDashboardChanges = async (currentJsonFile, newJsonFile) => {
         const text = `Dashboard **${dashboardPermissionChanges.join(', ')}** permissions changed!`;
         let NotificationPayload = {
             text,
-            mrkdwn = true
+            mrkdwn: true
         };
         console.log("sending notification about permissions changed");
         console.log(JSON.stringify(NotificationPayload));
@@ -59,7 +59,7 @@ const checkDashboardChanges = async (currentJsonFile, newJsonFile) => {
         const text = `Dashboard **${dashboardReportChanges.join(', ')}** related reports changed!`;
         let NotificationPayload = {
             text,
-            mrkdwn = true
+            mrkdwn: true
         };
         console.log("sending notification about reports changed");
         console.log(JSON.stringify(NotificationPayload));
@@ -235,7 +235,7 @@ const main = async () => {
         const text = `Error when checking pbi dashboards: ${error}`;
         let NotificationPayload = {
             text,
-            mrkdwn = true
+            mrkdwn: true
         };
         await axios.post(process.env.TEAMS_INFRA_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
     } 
