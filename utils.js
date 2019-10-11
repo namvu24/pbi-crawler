@@ -1,4 +1,15 @@
 const azure = require('azure-storage');
+const axios = require('axios');
+
+const sendToTeams = async (webhookURL, text) => {
+    let NotificationPayload = {
+        text,
+        mrkdwn: true
+    };
+    console.log("sending notification to Teams");
+    console.log(JSON.stringify(NotificationPayload));
+    await axios.post(webhookURL, JSON.stringify(NotificationPayload));
+}
 
 // Convert dashboards json to CSV format with header and delimiter
 const convertToCSV = (dataObject) => {
@@ -44,6 +55,7 @@ const downloadFromBlobStorage = (container, blob, filePath, connString) => {
 };
 
 module.exports = {
+    sendToTeams,
     convertToCSV,
     uploadToBlobStorage,
     downloadFromBlobStorage

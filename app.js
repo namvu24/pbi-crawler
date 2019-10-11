@@ -5,7 +5,7 @@ const axios = require('axios');
 const moment = require('moment');
 const _ = require('lodash');
 
-const { convertToCSV, uploadToBlobStorage, downloadFromBlobStorage } = require('./utils.js');
+const { sendToTeams, convertToCSV, uploadToBlobStorage, downloadFromBlobStorage } = require('./utils.js');
 
 const checkDashboardChanges = async (currentJsonFile, newJsonFile) => {
     console.log("Checking dashboard for changes...");
@@ -19,51 +19,25 @@ const checkDashboardChanges = async (currentJsonFile, newJsonFile) => {
     const newlyCreatedDashboards = _(newDashboardNames).map(i => (currentDashboardNames).includes(i) ? "" : i).value().filter(i => i != "");
     if(newlyCreatedDashboards.length > 0) {
         const text = `New dashboard **${newlyCreatedDashboards.join(', ')}**.`;
-        let NotificationPayload = {
-            text,
-            mrkdwn: true
-        };
-        console.log("sending notification about new dashboards");
-        console.log(JSON.stringify(NotificationPayload));
-        await axios.post(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
+        await sendToTeams(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, text);
     }  
     
-    let dashboardPermissionChanges = [];
-    let dashboardReportChanges = [];
     for(let i = 0; i < currentDashboardNames.length; ++i) {
         const dashboardName = currentDashboardNames[i];
         const currentDashboardInfo = currentDashboards.find(x => x.name === dashboardName);
         const newDashboardInfo = newDashboards.find(x => x.name === dashboardName);
         if(!_.isEqual(currentDashboardInfo.permissionRows, newDashboardInfo.permissionRows)) {
-            dashboardPermissionChanges.push(dashboardName);
             console.log(`Found permission changes in dashboard ${dashboardName}`);
+            const text = `Dashboard **${dashboardName}** permissions changed!\n\n**`
+            + `From:** ${currentDashboardInfo.permissionRows.join('\n\n')}\n\n`
+            + `**To:** ${newDashboardInfo.permissionRows.join('\n\n')}`;
+            await sendToTeams(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, text);
         }
         if(!_.isEqual(currentDashboardInfo.relatedReports, newDashboardInfo.relatedReports)) {
-            dashboardReportChanges.push(dashboardName);
             console.log(`Found report changes in dashboard ${dashboardName}`);
+            const text = `Dashboard **${dashboardName}** related reports changed!`;
+            await sendToTeams(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, text);
         }
-    }
-
-    if(dashboardPermissionChanges.length > 0) {
-        const text = `Dashboard **${dashboardPermissionChanges.join(', ')}** permissions changed!`;
-        let NotificationPayload = {
-            text,
-            mrkdwn: true
-        };
-        console.log("sending notification about permissions changed");
-        console.log(JSON.stringify(NotificationPayload));
-        await axios.post(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
-    }
-
-    if(dashboardReportChanges.length > 0) {
-        const text = `Dashboard **${dashboardReportChanges.join(', ')}** related reports changed!`;
-        let NotificationPayload = {
-            text,
-            mrkdwn: true
-        };
-        console.log("sending notification about reports changed");
-        console.log(JSON.stringify(NotificationPayload));
-        await axios.post(process.env.TEAMS_E2E_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
     }
 }
 
@@ -233,11 +207,7 @@ const main = async () => {
     catch (error) {
         console.log(error);
         const text = `Error when checking pbi dashboards: ${error}`;
-        let NotificationPayload = {
-            text,
-            mrkdwn: true
-        };
-        await axios.post(process.env.TEAMS_INFRA_CHANNEL_WEBHOOK, JSON.stringify(NotificationPayload));
+        await sendToTeams(process.env.TEAMS_INFRA_CHANNEL_WEBHOOK, text);
     } 
     finally {
         if(browser)
