@@ -3,7 +3,7 @@
 ## Components
 ### cap-pbi-crawler
 * An Azure Container Instance that browse PowerBI  dashboards and generate/upload dashboard data (permissions and related reports) to storage account
-* Using generated data to compare with previous-run data to find changes, send to Teams E2E channel if any.
+* Using generated data to compare with previous-run data to find changes, send to Teams channel if any.
 * This container is short lived program that terminates itself when finished.
 * Automatically pull image `pbicrawler:latest` from ACR (azure container registry)
 
