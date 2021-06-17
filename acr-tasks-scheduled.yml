@@ -1,6 +1,0 @@
-version: v1.0.0
-steps:
-- build: -t {{.Run.Registry}}/pbicrawler:latest -f Dockerfile .
-- push:
-  - {{.Run.Registry}}/pbicrawler:latest
-- cmd: "mcr.microsoft.com/acr/acr-cli:0.1 purge --registry {{.Run.Registry}} --filter 'pbicrawler:.*' --untagged --ago 3d"

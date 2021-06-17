@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "containerGroupsName": {
+      "value": "cap-pbi-crawler"
+    },
+    "teamsE2EChannelWebhookURL": {
+      "value": "notify-webhook-teams-channel"
+    },
+    "teamsInfraChannelWebhookURL": {
+      "value": "error-webhook-teams-channel"
+    },
+    "serviceAccount": {
+      "value": "service-account-name"
+    },
+    "serviceAccountEmail": {
+      "value": "service-account-email"
+    },
+    "storageAccountName": {
+      "value": "cappowerbimonitorstor"
+    },
+    "tenantId": {
+      "value": "tenant-id"
+    },
+    "imageName": {
+      "value": "docker-image-location-path"
+    },
+    "storageAccountKey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/<tenant-id>/resourceGroups/<rsource-group>/providers/Microsoft.KeyVault/vaults/<key-vault-name>"
+        },
+        "secretName": "<storage-acc-key-secret-name>"
+      }
+    },
+    "serviceAccountPwd": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/<tenant-id>/resourceGroups/<rsource-group>/providers/Microsoft.KeyVault/vaults/<key-vault-name>"
+        },
+        "secretName": "<service-account-password-secret-name>"
+      }
+    },
+    "imageRegistryPwd": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/<tenant-id>/resourceGroups/<rsource-group>/providers/Microsoft.KeyVault/vaults/<key-vault-name>"
+        },
+        "secretName": "<service-principal-secret-secret-name>"
+      }
+    }
+  }
+}
