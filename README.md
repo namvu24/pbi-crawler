@@ -5,11 +5,11 @@
 * An Azure Container Instance that browse PowerBI  dashboards and generate/upload dashboard data (permissions and related reports) to storage account
 * Using generated data to compare with previous-run data to find changes, send to Teams E2E channel if any.
 * This container is short lived program that terminates itself when finished.
-* Automatically pull image `pbicrawler:latest` from `cmrcapwus2acr`.
+* Automatically pull image `pbicrawler:latest` from ACR (azure container registry)
 
 ### Service principal and service account
-* Service principal  to pull image from acr `cmrcapwus2acr` 
-  * ACR Pull role in ACR
+* Service principal  to pull image from ACR (azure container registry)
+  * ACRPull role in ACR
   * Secret stored in key vault (check arm-template)
 * Service account which has access to PowerBI workspace
   * Password stored in key vault (check arm-template)
