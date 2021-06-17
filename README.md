@@ -23,7 +23,7 @@
 * Disable the automatic generated webhook for pull request since we always build and push the latest image.
 * Create a ACR task using acr-tasks.yml to build, push, and purge images.
 ```
-az acr task create --name pbicrawlercicd -f acr-tasks.yml -r 'cmrcapwus2acr' -c 'https://github.com/namvu24/pbi-crawler.git' --git-access-token <github-token> --subscription <az-subscription>
+az acr task create --name pbicrawlercicd -f acr-tasks.yml -r '<acr-name>' -c 'https://github.com/namvu24/pbi-crawler.git' --git-access-token <github-token> --subscription <az-subscription>
 ```
 * Deploy ACI using arm-template
 
