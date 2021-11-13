@@ -1,0 +1,82 @@
+trigger:
+- master
+
+variables:
+- name: subscriptionId
+  value: 'e076e91d-a855-48ea-bc22-4c10e8e9987f'
+- name: resourceGroupName
+  value: cap-powerbi-monitor
+- name: acrName
+  value: cmrcapwus2acr
+- name: acrURL
+  value: $(acrName).azurecr.io
+- name: repoName
+  value: pbicrawler
+- name: templateFolder
+  value: arm-template
+- name: storageAccountName
+  value: cappowerbimonitorstor
+- name: containerName
+  value: arm-template
+- name: deployLocation
+  value: 'North Europe'
+
+pool:
+  vmImage: windows-latest
+
+jobs:
+- job: Build
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - task: AzureCLI@2
+    inputs:
+      azureSubscription: 'CMR CAP Public Cloud - SVC MGMT'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        az acr login -n $(acrName)
+
+        docker pull $(acrURL)/$(repoName):latest
+
+        docker build \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --cache-from $(acrURL)/$(repoName):latest \
+        --tag $(acrURL)/$(repoName):$(Build.BuildId) \
+        .
+
+        docker push $(acrURL)/$(repoName):$(Build.BuildId)
+    displayName: Build and Push new image
+
+- job: Deploy
+  dependsOn: Build
+  pool:
+    vmImage: windows-latest
+  steps:
+  - script: |
+      echo 'Deploying ARM Template for image "$(acrURL)/$(repoName):$(Build.BuildId)"'
+    displayName: Info
+
+  - task: AzureFileCopy@4
+    inputs:
+      SourcePath: $(templateFolder)
+      azureSubscription: 'CMR CAP Public Cloud - SVC MGMT'
+      Destination: 'AzureBlob'
+      storage: $(storageAccountName)
+      ContainerName: $(containerName)
+    displayName: Upload Templates
+
+  - task: AzureResourceManagerTemplateDeployment@3
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'CMR CAP Public Cloud - SVC MGMT'
+      subscriptionId: $(subscriptionId)
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: $(resourceGroupName)
+      templateLocation: 'URL of the file'
+      csmFileLink: '$(AzureFileCopy.StorageContainerUri)$(templateFolder)/template.json$(AzureFileCopy.StorageContainerSasToken)'
+      csmParametersFileLink: '$(AzureFileCopy.StorageContainerUri)$(templateFolder)/parameters.json$(AzureFileCopy.StorageContainerSasToken)'
+      overrideParameters: '-imageName "$(acrURL)/$(repoName):$(Build.BuildId)"'
+      deploymentMode: 'Incremental'
+      location: $(deployLocation)
+    displayName: Deploy Arm Template
